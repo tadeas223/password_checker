@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import './App.css'
 import PasswordInput from './PasswordInput';
+import PasswordStrength from './PasswordStrength';
 
 function App() {
   const [password, setPassword] = useState<String>("");
@@ -9,7 +10,7 @@ function App() {
   <>
     <h1>Password checker</h1>
     <PasswordInput setter={setPassword}/>
-    <h1>{password}</h1>
+    <PasswordStrength password={password}/>
   </>
   )
 }
