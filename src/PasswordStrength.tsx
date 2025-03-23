@@ -1,52 +1,67 @@
+import { CharacterSequenceValidator, levelNumber } from "./CharacterSequenceValidator";
+import PasswordTimeValidator from "./PasswordTimeValidator";
+import CountryFlagValidator from "./CountryFlagValidator";
+
 interface PasswordStrengthProps {
-    password: string
+    password: string,
+    country: string,
+    creationTime: number|null,
 }
 
-interface Level {
-        length: boolean,
-        upper: boolean,
-        special: boolean,
-        number: boolean,
+export function evaluatePassword(password: string, country: string) {
+    let valid = CharacterSequenceValidator(password, [ /[A-Z]/, /[0-9]/, /[!@#$%^&*]/]);
+
+    if(password.length >= 8) valid.push(true);
+    else valid.push(false);
+    
+    valid.push(CountryFlagValidator(password, country));
+    
+    if(levelNumber(valid) == 5) {
+        return "good";
+    } else if(levelNumber(valid) > 3) {
+        return "normal";
+    } else {
+        return "bad";
+    }
 }
 
-function levelNumber(level: Level): number {
-    let num = 0;
-    if(level.length) num++;
-    if(level.upper) num++;
-    if(level.special) num++;
-    if(level.number) num++;
-    return num;
-}
+const PasswordStrength: React.FC<PasswordStrengthProps> = ({password, country, creationTime}: PasswordStrengthProps) => {
+    let valid = CharacterSequenceValidator(password, [ /[A-Z]/, /[0-9]/, /[!@#$%^&*]/]);
+    if(password.length >= 8) valid.push(true);
+    else valid.push(false);
+    
+    let timeValid = true;
+    if(creationTime !== null) {
+        timeValid = PasswordTimeValidator(creationTime, 5000);
+    }
 
-const PasswordStrength: React.FC<PasswordStrengthProps> = ({password}: PasswordStrengthProps) => {
-    let minLen = 8; 
-    let level: Level = {
-        length: false, 
-        upper: false, 
-        special: false, 
-        number: false, 
-    };
+    valid.push(CountryFlagValidator(password, country));
 
-    if(password.length > minLen) level.length = true;
-    if(password.match(/[A-Z]/) !== null) level.upper = true;
-    if(password.match(/[0-9]/) !== null) level.number = true;
-    if(password.match(/[!@#$%^&*]/) !== null) level.special= true;
+    if(timeValid) {
+        return (
+            <>
+                <p>Password is {
+                    (levelNumber(valid) == 5)? <span style={{color: "green"}}> good </span>
+                    : (levelNumber(valid) > 3)? <span style={{color: "orange"}}> normal </span>
+                    : <span style={{color: "red"}}> bad </span>
+                }</p>
 
-    return (
-        <>
-            <p>Password is {
-                (levelNumber(level) == 4)? <span style={{color: "green"}}> good </span>
-                : (levelNumber(level) >= 2)? <span style={{color: "orange"}}> normal </span>
-                : <span style={{color: "red"}}> bad </span>
-            }</p>
-
-            <p> Password should have: </p>
-            <p><span style={{color: (level.length)? "green" : "red"}}>More than {minLen} characters</span></p>
-            <p><span style={{color: (level.upper)? "green" : "red"}}>At least one upper case character</span></p>
-            <p><span style={{color: (level.number)? "green" : "red"}}>At least one number</span></p>
-            <p><span style={{color: (level.special)? "green" : "red"}}>At least one of this characters "!@#$%^&*"</span></p>
-        </>
-    )
+                <p>Password should have: </p>
+                <p><span style={{color: (valid[0])? "green" : "red"}}>At least one upper case character</span></p>
+                <p><span style={{color: (valid[1])? "green" : "red"}}>At least one number</span></p>
+                <p><span style={{color: (valid[2])? "green" : "red"}}>At least one of this characters "!@#$%^&*"</span></p>
+                <p><span style={{color: (valid[3])? "green" : "red"}}>More than 8 characters</span></p>
+                <p><span style={{color: (valid[4])? "green" : "red"}}>Password must contaion the coutry code of this country: </span></p>
+                <img style={{width: "50%"}} src={ "https://countryflagsapi.netlify.app/flag/" + country + ".svg"} />
+            </>
+        );
+    } else {
+        return (
+            <>
+                <p style={{color: "red"}}>Slow down</p>
+            </>
+        )
+    }
 }
 
 export default PasswordStrength;
